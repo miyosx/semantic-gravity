@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Semantic Gravity</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0a0a0a;
+      font-family: 'Georgia', serif;
+      overflow: hidden;
+    }
+
+    .container {
+      max-width: 800px;
+      padding: 2rem;
+    }
+
+    .sentence {
+      font-size: 2.5rem;
+      line-height: 1.6;
+      color: #e0e0e0;
+      text-align: center;
+    }
+
+    .word {
+      display: inline-block;
+      position: relative;
+      cursor: pointer;
+      padding: 0 0.1em;
+      transition: color 0.3s ease;
+      user-select: none;
+    }
+
+    .word:hover {
+      color: #fff;
+    }
+
+    .word.holding {
+      color: #ff6b6b;
+    }
+
+    /* The morphing text effect */
+    .word-inner {
+      position: relative;
+      display: inline-block;
+    }
+
+    .word-current {
+      position: relative;
+      transition: opacity 0.4s ease, filter 0.4s ease;
+    }
+
+    .word-next {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+      opacity: 0;
+      filter: blur(4px);
+      transition: opacity 0.4s ease, filter 0.4s ease;
+      white-space: nowrap;
+    }
+
+    .word.morphing .word-current {
+      opacity: 0.3;
+      filter: blur(3px);
+    }
+
+    .word.morphing .word-next {
+      opacity: 1;
+      filter: blur(0);
+    }
+
+    /* Primary change (the held word) */
+    .word.primary-change .word-next {
+      color: #ff6b6b;
+    }
+
+    /* Secondary changes (grammar adjustments) */
+    .word.secondary-change .word-next {
+      color: #6bffb8;
+    }
+
+    .word.secondary-change .word-current {
+      opacity: 0.5;
+      filter: blur(2px);
+    }
+
+    /* Attractor reached */
+    .word.attractor {
+      color: #ffaaaa;
+      text-shadow: 0 0 20px rgba(255, 150, 150, 0.5);
+    }
+
+    /* Progress indicator */
+    .word::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0%;
+      height: 2px;
+      background: linear-gradient(90deg, #ff6b6b, #ffaaaa);
+      transition: width 0.1s linear;
+    }
+
+    .word.holding::after {
+      width: var(--hold-progress, 0%);
+    }
+
+    /* Debug info */
+    .debug {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      color: #666;
+      font-family: monospace;
+      font-size: 12px;
+    }
+
+    /* LLM controls */
+    .llm-controls {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+
+    #model-select {
+      background: #1a1a1a;
+      color: #e0e0e0;
+      border: 1px solid #333;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    #model-select:hover {
+      border-color: #555;
+    }
+
+    .llm-status {
+      padding: 6px 10px;
+      border-radius: 4px;
+      background: #1a1a1a;
+    }
+
+    .llm-status.connected {
+      color: #6bffb8;
+    }
+
+    .llm-status.disconnected {
+      color: #ff6b6b;
+    }
+
+    .llm-status.checking {
+      color: #ffaa6b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p class="sentence" id="sentence">
+      <!-- Words will be injected here -->
+    </p>
+  </div>
+  <div class="debug" id="debug"></div>
+  <div class="llm-controls">
+    <select id="model-select">
+      <option value="">Loading models...</option>
+    </select>
+    <span class="llm-status checking" id="llm-status">checking...</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
