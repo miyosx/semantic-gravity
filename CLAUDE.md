@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Running the Project
 
 ```bash
-python3 -m http.server 8000
+python3 server.py
 # Open http://localhost:8000
 ```
 

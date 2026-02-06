@@ -202,7 +202,7 @@ const SOFT_MAP = new Map([
 
 // ── State ──────────────────────────────────────────────────────
 const state = {
-  paragraphs: [],        // [{sentences: [{words: [wordObj...], needsGrammarCheck, needsRewrite, rewriteCount}]}]
+  paragraphs: [],        // [{sentences: [{words: [wordObj...], needsGrammarCheck, needsRewrite}]}]
   allWords: [],          // flat list of all word objects (for wave distance checks)
 
   waveOrigin: null,      // {x, y} in page coordinates
@@ -276,9 +276,10 @@ function initInputOverlay() {
     try {
       urlBtn.textContent = 'Loading...';
       urlBtn.disabled = true;
-      const resp = await fetch(url);
+      const resp = await fetch('/fetch?url=' + encodeURIComponent(url));
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const html = await resp.text();
+      const data = await resp.json();
+      const html = data.html;
       const text = extractTextFromHTML(html);
       if (!text || text.length < 10) {
         showError('Could not extract meaningful text from that URL.');
@@ -288,7 +289,7 @@ function initInputOverlay() {
       dismissOverlay();
     } catch (err) {
       console.error('URL fetch failed:', err);
-      showError('Could not fetch URL (likely CORS). Try pasting text instead.');
+      showError('Could not fetch URL. Make sure you started the server with: python3 server.py');
     } finally {
       urlBtn.textContent = 'Load';
       urlBtn.disabled = false;
@@ -374,7 +375,7 @@ function loadText(rawText) {
         globalWordIndex++;
         return wordObj;
       });
-      return { words, needsGrammarCheck: false, needsRewrite: false, rewriteCount: 0 };
+      return { words, needsGrammarCheck: false, needsRewrite: false };
     });
     state.paragraphs.push({ sentences });
   });
@@ -578,7 +579,7 @@ function checkWaveReach() {
       const para = state.paragraphs[word.paragraphIndex];
       if (para) {
         const sentence = para.sentences[word.sentenceIndex];
-        if (sentence && sentence.rewriteCount < 2) {
+        if (sentence) {
           sentence.needsRewrite = true;
         }
       }
@@ -640,7 +641,7 @@ function transformGestellWord(word) {
     word.transformed = true;
     word.isAnchor = true;
     el.classList.remove('morphing', 'primary-change');
-    el.classList.add('transformed');
+    el.classList.add('transformed', 'anchor');
     el.classList.remove('gestell-marker');
 
     nextEl.textContent = '';
@@ -693,7 +694,7 @@ async function transformClickedWord(word) {
   } else {
     // Try LLM for a single-word replacement
     const result = await callLLM(
-      `In the shift from extraction/domination to care/dwelling/tenderness, what single word could replace "${lower}"? Reply with ONLY one word, nothing else.`,
+      `Does the word "${lower}" carry connotations of extraction, domination, control, or commodification? If yes, suggest one gentler word that shifts it toward care/dwelling/tenderness. If no, reply with "${lower}" unchanged. Reply with ONLY one word.`,
       10
     );
     if (result) {
@@ -723,7 +724,7 @@ async function transformClickedWord(word) {
     word.transformed = true;
     word.isAnchor = true;
     el.classList.remove('morphing', 'primary-change');
-    el.classList.add('transformed');
+    el.classList.add('transformed', 'anchor');
     nextEl.textContent = '';
 
     // Mark sentence for grammar check
@@ -788,12 +789,7 @@ Reply with ONLY the rewritten sentence, nothing else.`;
   for (const para of state.paragraphs) {
     for (const sentence of para.sentences) {
       if (!sentence.needsRewrite) continue;
-      if (sentence.rewriteCount >= 2) {
-        sentence.needsRewrite = false;
-        continue;
-      }
       sentence.needsRewrite = false;
-      sentence.rewriteCount++;
 
       const sentenceText = sentence.words.map(w => w.current).join(' ');
 
