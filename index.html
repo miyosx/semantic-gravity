@@ -13,44 +13,159 @@
 
     body {
       min-height: 100vh;
+      background: #0a0a0a;
+      font-family: 'Georgia', serif;
+      color: #e0e0e0;
+    }
+
+    /* ── Input Overlay ── */
+    #input-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
       display: flex;
       align-items: center;
       justify-content: center;
       background: #0a0a0a;
-      font-family: 'Georgia', serif;
-      overflow: hidden;
+      transition: opacity 0.8s ease;
     }
 
-    .container {
-      max-width: 800px;
-      padding: 2rem;
+    #input-overlay.fade-out {
+      opacity: 0;
+      pointer-events: none;
     }
 
-    .sentence {
-      font-size: 2.5rem;
-      line-height: 1.6;
-      color: #e0e0e0;
+    .input-panel {
+      max-width: 520px;
+      width: 90%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .input-panel h1 {
+      font-size: 1.6rem;
+      font-weight: 400;
+      color: #ccc;
       text-align: center;
+      margin-bottom: 0.5rem;
     }
 
+    .input-panel .subtitle {
+      font-size: 0.9rem;
+      color: #666;
+      text-align: center;
+      margin-top: -0.8rem;
+      font-style: italic;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .input-row input[type="text"] {
+      flex: 1;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #e0e0e0;
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    .input-row input[type="text"]:focus {
+      outline: none;
+      border-color: #555;
+    }
+
+    .divider {
+      text-align: center;
+      color: #444;
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    .input-panel textarea {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #e0e0e0;
+      padding: 12px 14px;
+      border-radius: 4px;
+      font-family: 'Georgia', serif;
+      font-size: 14px;
+      min-height: 160px;
+      resize: vertical;
+    }
+
+    .input-panel textarea:focus {
+      outline: none;
+      border-color: #555;
+    }
+
+    .input-panel textarea::placeholder {
+      color: #555;
+    }
+
+    .btn {
+      background: #222;
+      border: 1px solid #444;
+      color: #ccc;
+      padding: 8px 20px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .btn:hover {
+      background: #333;
+      border-color: #666;
+    }
+
+    #input-error {
+      color: #ff6b6b;
+      font-size: 0.85rem;
+      font-family: monospace;
+      min-height: 1.2em;
+    }
+
+    /* ── Text Display ── */
+    #text-display {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+      line-height: 1.8;
+      font-size: 1.25rem;
+      cursor: default;
+      user-select: none;
+    }
+
+    #text-display p {
+      margin-bottom: 1.2em;
+    }
+
+    /* ── Word Spans ── */
     .word {
       display: inline-block;
       position: relative;
       cursor: pointer;
-      padding: 0 0.1em;
+      padding: 0 0.05em;
       transition: color 0.3s ease;
-      user-select: none;
     }
 
     .word:hover {
       color: #fff;
     }
 
-    .word.holding {
-      color: #ff6b6b;
+    .word.gestell-marker {
+      text-decoration: underline;
+      text-decoration-color: rgba(255, 107, 107, 0.25);
+      text-underline-offset: 3px;
     }
 
-    /* The morphing text effect */
     .word-inner {
       position: relative;
       display: inline-block;
@@ -58,7 +173,7 @@
 
     .word-current {
       position: relative;
-      transition: opacity 0.4s ease, filter 0.4s ease;
+      transition: opacity 0.6s ease, filter 0.6s ease;
     }
 
     .word-next {
@@ -68,10 +183,23 @@
       transform: translateX(-50%);
       opacity: 0;
       filter: blur(4px);
-      transition: opacity 0.4s ease, filter 0.4s ease;
+      transition: opacity 0.6s ease, filter 0.6s ease;
       white-space: nowrap;
     }
 
+    .word-ghost {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      filter: blur(1px);
+      color: #666;
+      transition: opacity 0.6s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* Morphing state */
     .word.morphing .word-current {
       opacity: 0.3;
       filter: blur(3px);
@@ -82,7 +210,7 @@
       filter: blur(0);
     }
 
-    /* Primary change (the held word) */
+    /* Primary change (wave-transformed Gestell word) */
     .word.primary-change .word-next {
       color: #ff6b6b;
     }
@@ -97,29 +225,31 @@
       filter: blur(2px);
     }
 
-    /* Attractor reached */
-    .word.attractor {
-      color: #ffaaaa;
-      text-shadow: 0 0 20px rgba(255, 150, 150, 0.5);
+    /* Transformed — ghost visible */
+    .word.transformed .word-ghost {
+      opacity: 0.2;
     }
 
-    /* Progress indicator */
-    .word::after {
-      content: '';
-      position: absolute;
-      bottom: -4px;
-      left: 0;
-      width: 0%;
-      height: 2px;
-      background: linear-gradient(90deg, #ff6b6b, #ffaaaa);
-      transition: width 0.1s linear;
+    .word.transformed {
+      color: #f0d0d0;
     }
 
-    .word.holding::after {
-      width: var(--hold-progress, 0%);
+    /* ── Wave ripple indicator ── */
+    #wave-ring {
+      position: fixed;
+      border: 1px solid rgba(255, 107, 107, 0.3);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 50;
+      display: none;
+      transform: translate(-50%, -50%);
     }
 
-    /* Debug info */
+    #wave-ring.active {
+      display: block;
+    }
+
+    /* ── Debug info ── */
     .debug {
       position: fixed;
       bottom: 20px;
@@ -129,7 +259,7 @@
       font-size: 12px;
     }
 
-    /* LLM controls */
+    /* ── LLM controls ── */
     .llm-controls {
       position: fixed;
       top: 20px;
@@ -162,26 +292,67 @@
       background: #1a1a1a;
     }
 
-    .llm-status.connected {
-      color: #6bffb8;
+    .llm-status.connected { color: #6bffb8; }
+    .llm-status.disconnected { color: #ff6b6b; }
+    .llm-status.checking { color: #ffaa6b; }
+
+    /* ── Config panel ── */
+    .config-controls {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #666;
     }
 
-    .llm-status.disconnected {
-      color: #ff6b6b;
+    .config-controls label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
-    .llm-status.checking {
-      color: #ffaa6b;
+    .config-controls input[type="range"] {
+      width: 80px;
+      accent-color: #ff6b6b;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <p class="sentence" id="sentence">
-      <!-- Words will be injected here -->
-    </p>
+  <!-- Input overlay -->
+  <div id="input-overlay">
+    <div class="input-panel">
+      <h1>Semantic Gravity</h1>
+      <p class="subtitle">Gestell → Gelassenheit</p>
+
+      <div class="input-row">
+        <input type="text" id="url-input" placeholder="Paste a URL..." />
+        <button class="btn" id="url-load-btn">Load</button>
+      </div>
+
+      <div class="divider">or</div>
+
+      <textarea id="paste-input" placeholder="Paste text here..."></textarea>
+      <button class="btn" id="paste-load-btn">Load</button>
+
+      <div id="input-error"></div>
+    </div>
   </div>
+
+  <!-- Main display -->
+  <div id="text-display"></div>
+
+  <!-- Wave ring indicator -->
+  <div id="wave-ring"></div>
+
+  <!-- UI chrome -->
   <div class="debug" id="debug"></div>
+  <div class="config-controls">
+    <label>wave speed <input type="range" id="wave-speed" min="50" max="600" value="200" /> <span id="wave-speed-val">200</span>px/s</label>
+  </div>
   <div class="llm-controls">
     <select id="model-select">
       <option value="">Loading models...</option>
